@@ -7,7 +7,7 @@ import { VerifiableCredential } from '../core/index.js';
 class VCBuilder {
   constructor() {
     this.vc = new VerifiableCredential();
-    this.vc.setContext([]);
+    this.vc.setContext(['https://www.w3.org/ns/credentials/v2']);  // Updated to v2.0 context
     this.vc.setType([]);
   }
 
@@ -78,7 +78,29 @@ class VCBuilder {
   }
 
   /**
-   * Sets the issuance date of the Verifiable Credential.
+   * Sets the valid from date of the Verifiable Credential.
+   * 
+   * @param {string} validFrom The valid from date in ISO 8601 format
+   * @returns {VCBuilder} The builder instance
+   */
+  validFrom(validFrom) {
+    this.vc.setValidFrom(validFrom);
+    return this;
+  }
+
+  /**
+   * Sets the valid until date of the Verifiable Credential.
+   * 
+   * @param {string} validUntil The valid until date in ISO 8601 format
+   * @returns {VCBuilder} The builder instance
+   */
+  validUntil(validUntil) {
+    this.vc.setValidUntil(validUntil);
+    return this;
+  }
+
+  /**
+   * Sets the issuance date of the Verifiable Credential (deprecated v1.0 method).
    * 
    * @param {string} issuanceDate The issuance date in ISO 8601 format
    * @returns {VCBuilder} The builder instance
@@ -89,7 +111,7 @@ class VCBuilder {
   }
 
   /**
-   * Sets the expiration date of the Verifiable Credential.
+   * Sets the expiration date of the Verifiable Credential (deprecated v1.0 method).
    * 
    * @param {string} expirationDate The expiration date in ISO 8601 format
    * @returns {VCBuilder} The builder instance
@@ -129,8 +151,8 @@ class VCBuilder {
       throw new Error("Verifiable Credential must have an issuer");
     }
 
-    if (!this.vc.getIssuanceDate()) {
-      throw new Error("Verifiable Credential must have an issuance date");
+    if (!this.vc.getValidFrom()) {
+      throw new Error("Verifiable Credential must have a valid from date");
     }
 
     if (!this.vc.getCredentialSubject()) {

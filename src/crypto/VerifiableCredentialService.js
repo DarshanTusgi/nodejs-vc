@@ -79,6 +79,72 @@ class VerifiableCredentialService {
   }
 
   /**
+   * Signs a VP (Verifiable Presentation) using ECDSA P-256 (FIPS mode).
+   * @param {Object} vp - Verifiable Presentation
+   * @param {crypto.KeyObject|string} privateKey - Node crypto KeyObject or Base64 encoded private key
+   * @returns {Object} VP with proof
+   */
+  signPresentation(vp, privateKey) {
+    const signedVp = JSON.parse(JSON.stringify(vp));
+
+    // Prepare proof
+    const proof = ProofGenerator.createProofWithMetadata(
+      VerifiableCredentialService.PROOF_TYPE,
+      "authentication", // VP uses authentication proof purpose
+      vp.holder ? `${vp.holder}#key-1` : "did:example:holder#key-1"
+    );
+
+    // Canonicalize VP (without proof)
+    const canonicalVp = JSONLDCanon.canonicalize(vp, true);
+
+    // Handle Base64 encoded private key
+    const keyObject = this._getKeyObject(privateKey, 'private');
+
+    // FIPS-compliant signing
+    const sign = crypto.createSign(VerifiableCredentialService.SIGNATURE_ALGORITHM);
+    sign.update(canonicalVp);
+    sign.end();
+    const signature = sign.sign(keyObject, 'base64');
+
+    console.log("[FIPS AUDIT] Signed VP digest with ECDSA P-256");
+    proof.setProofValue(signature);
+
+    signedVp.proof = proof.toJSON();
+    return signedVp;
+  }
+
+  /**
+   * Verifies a VP (Verifiable Presentation) using ECDSA P-256 (FIPS mode).
+   * @param {Object} vp - Verifiable Presentation
+   * @param {crypto.KeyObject|string} publicKey - Node crypto KeyObject or Base64 encoded public key
+   * @returns {boolean} true if valid
+   */
+  verifyPresentation(vp, publicKey) {
+    if (!vp.proof || !vp.proof.proofValue) return false;
+
+    const proof = vp.proof;
+    const signature = proof.proofValue;
+
+    // Remove proof for canonicalization
+    const vpWithoutProof = JSON.parse(JSON.stringify(vp));
+    delete vpWithoutProof.proof;
+
+    const canonicalVp = JSONLDCanon.canonicalize(vpWithoutProof);
+
+    // Handle Base64 encoded public key
+    const keyObject = this._getKeyObject(publicKey, 'public');
+
+    // FIPS-compliant verification
+    const verify = crypto.createVerify(VerifiableCredentialService.SIGNATURE_ALGORITHM);
+    verify.update(canonicalVp);
+    verify.end();
+
+    const valid = verify.verify(keyObject, signature, 'base64');
+    console.log(`[FIPS AUDIT] Verified VP signature: ${valid}`);
+    return valid;
+  }
+
+  /**
    * Helper method to convert Base64 string to KeyObject if needed
    * @param {crypto.KeyObject|string} key - KeyObject or Base64 encoded key
    * @param {string} type - 'private' or 'public'

@@ -53,7 +53,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
  *         - '@context'
  *         - type
  *         - issuer
- *         - issuanceDate
+ *         - validFrom
  *         - credentialSubject
  *       properties:
  *         '@context':
@@ -61,7 +61,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
  *           items:
  *             type: string
  *           description: The JSON-LD context(s) of the credential
- *           example: ["https://www.w3.org/2018/credentials/v1"]
+ *           example: ["https://www.w3.org/ns/credentials/v2"]
  *         type:
  *           type: array
  *           items:
@@ -76,15 +76,15 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
  *           type: string
  *           description: The issuer of the credential (DID or URL)
  *           example: "did:example:123456789abcdefghi"
- *         issuanceDate:
+ *         validFrom:
  *           type: string
  *           format: date-time
- *           description: The issuance date of the credential
+ *           description: The date and time from which the credential is valid
  *           example: "2023-06-01T12:00:00Z"
- *         expirationDate:
+ *         validUntil:
  *           type: string
  *           format: date-time
- *           description: The expiration date of the credential (optional)
+ *           description: The date and time until which the credential is valid (optional)
  *           example: "2024-06-01T12:00:00Z"
  *         credentialSubject:
  *           type: object
@@ -197,12 +197,12 @@ app.get('/api/keypair', (req, res) => {
  *           example:
  *             credential:
  *               '@context':
- *                 - "https://www.w3.org/2018/credentials/v1"
+ *                 - "https://www.w3.org/ns/credentials/v2"
  *               type:
  *                 - "VerifiableCredential"
  *               id: "http://example.edu/credentials/123"
  *               issuer: "did:example:123456789abcdefghi"
- *               issuanceDate: "2023-06-01T12:00:00Z"
+ *               validFrom: "2023-06-01T12:00:00Z"
  *               credentialSubject:
  *                 id: "did:example:ebfeb1f712ebc6f1c276e12ec21"
  *                 name: "Jane Doe"
@@ -218,12 +218,12 @@ app.get('/api/keypair', (req, res) => {
  *             example:
  *               signedCredential:
  *                 '@context':
- *                   - "https://www.w3.org/2018/credentials/v1"
+ *                   - "https://www.w3.org/ns/credentials/v2"
  *                 type:
  *                   - "VerifiableCredential"
  *                 id: "http://example.edu/credentials/123"
  *                 issuer: "did:example:123456789abcdefghi"
- *                 issuanceDate: "2023-06-01T12:00:00Z"
+ *                 validFrom: "2023-06-01T12:00:00Z"
  *                 credentialSubject:
  *                   id: "did:example:ebfeb1f712ebc6f1c276e12ec21"
  *                   name: "Jane Doe"
@@ -249,16 +249,18 @@ app.post('/api/sign', (req, res) => {
     
     // Create VC from the provided credential object
     const vc = new VCBuilder()
-      .context(credential['@context'] || ['https://www.w3.org/2018/credentials/v1'])
+      .context(credential['@context'] || ['https://www.w3.org/ns/credentials/v2'])
       .type(credential.type || ['VerifiableCredential'])
       .id(credential.id || `http://example.edu/credentials/${Date.now()}`)
       .issuer(credential.issuer || 'did:example:issuer')
-      .issuanceDate(credential.issuanceDate || new Date().toISOString())
+      .validFrom(credential.validFrom || credential.issuanceDate || new Date().toISOString())
       .credentialSubject(credential.credentialSubject || {});
     
     // Add optional fields if they exist
-    if (credential.expirationDate) {
-      vc.expirationDate(credential.expirationDate);
+    if (credential.validUntil) {
+      vc.validUntil(credential.validUntil);
+    } else if (credential.expirationDate) {
+      vc.validUntil(credential.expirationDate); // For backward compatibility
     }
     
     const builtVc = vc.build();
@@ -288,12 +290,12 @@ app.post('/api/sign', (req, res) => {
  *           example:
  *             credential:
  *               '@context':
- *                 - "https://www.w3.org/2018/credentials/v1"
+ *                 - "https://www.w3.org/ns/credentials/v2"
  *               type:
  *                 - "VerifiableCredential"
  *               id: "http://example.edu/credentials/123"
  *               issuer: "did:example:123456789abcdefghi"
- *               issuanceDate: "2023-06-01T12:00:00Z"
+ *               validFrom: "2023-06-01T12:00:00Z"
  *               credentialSubject:
  *                 id: "did:example:ebfeb1f712ebc6f1c276e12ec21"
  *                 name: "Jane Doe"

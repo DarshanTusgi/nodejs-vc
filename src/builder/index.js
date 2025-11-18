@@ -1,9 +1,12 @@
 import VCBuilder from './VCBuilder.js';
+import VPBuilder from './VPBuilder.js';
 
 export {
-  VCBuilder
+  VCBuilder,
+  VPBuilder
 };
 
 export default {
-  VCBuilder
+  VCBuilder,
+  VPBuilder
 };

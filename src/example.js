@@ -1,8 +1,10 @@
 import crypto from 'crypto';
-import { VerifiableCredentialService } from './crypto/index.js';
-import { VCBuilder } from './builder/index.js';
-import { JSONLDCanon } from './crypto/index.js';
-import { KeyUtils } from './crypto/index.js';
+import { 
+  VerifiableCredentialService, 
+  VCBuilder, 
+  JSONLDCanon, 
+  KeyUtils 
+} from './index.js';
 
 function main() {
   try {
